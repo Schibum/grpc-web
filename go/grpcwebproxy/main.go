@@ -9,12 +9,9 @@ import (
 	"os"
 	"time"
 
-	"crypto/tls"
 
 	"github.com/sirupsen/logrus"
-	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
-	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/mwitkow/go-conntrack"
 	"github.com/mwitkow/grpc-proxy/proxy"
@@ -36,7 +33,7 @@ var (
 
 func main() {
 	pflag.Parse()
-	serverTls := buildServerTlsOrFail()
+  // serverTls := buildServerTlsOrFail()
 
 	logrus.SetOutput(os.Stdout)
 
@@ -64,23 +61,6 @@ func main() {
 			errChan <- fmt.Errorf("http_debug server error: %v", err)
 		}
 	}()
-
-	// Debug server.
-	servingServer := http.Server{
-		WriteTimeout: *flagHttpMaxWriteTimeout,
-		ReadTimeout:  *flagHttpMaxReadTimeout,
-		Handler: http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
-			wrappedGrpc.ServeHTTP(resp, req)
-		}),
-	}
-	servingListener := buildListenerOrFail("http", *flagHttpTlsPort)
-	servingListener = tls.NewListener(servingListener, serverTls)
-	go func() {
-		logrus.Infof("listening for http_tls on: %v", servingListener.Addr().String())
-		if err := servingServer.Serve(servingListener); err != nil {
-			errChan <- fmt.Errorf("http_tls server error: %v", err)
-		}
-	}()
 	<-errChan
 	// TODO(mwitkow): Add graceful shutdown.
 }
@@ -99,14 +79,14 @@ func buildGrpcProxyServer(logger *logrus.Entry) *grpc.Server {
 	return grpc.NewServer(
 		grpc.CustomCodec(proxy.Codec()), // needed for proxy to function.
 		grpc.UnknownServiceHandler(proxy.TransparentHandler(director)),
-		grpc_middleware.WithUnaryServerChain(
-			grpc_logrus.UnaryServerInterceptor(logger),
-			grpc_prometheus.UnaryServerInterceptor,
-		),
-		grpc_middleware.WithStreamServerChain(
-			grpc_logrus.StreamServerInterceptor(logger),
-			grpc_prometheus.StreamServerInterceptor,
-		),
+		// grpc_middleware.WithUnaryServerChain(
+		// 	grpc_logrus.UnaryServerInterceptor(logger),
+		// 	grpc_prometheus.UnaryServerInterceptor,
+		// ),
+		// grpc_middleware.WithStreamServerChain(
+		// 	grpc_logrus.StreamServerInterceptor(logger),
+		// 	grpc_prometheus.StreamServerInterceptor,
+		// ),
 	)
 }
 

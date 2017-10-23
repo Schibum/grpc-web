@@ -9,7 +9,6 @@ import (
 	"github.com/mwitkow/grpc-proxy/proxy"
 	"github.com/spf13/pflag"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
 var (
@@ -43,11 +42,7 @@ func dialBackendOrFail() *grpc.ClientConn {
 	}
 	opt := []grpc.DialOption{}
 	opt = append(opt, grpc.WithCodec(proxy.Codec()))
-	if *flagBackendIsUsingTls {
-		opt = append(opt, grpc.WithTransportCredentials(credentials.NewTLS(buildBackendTlsOrFail())))
-	} else {
-		opt = append(opt, grpc.WithInsecure())
-	}
+  opt = append(opt, grpc.WithInsecure())
 	cc, err := grpc.Dial(*flagBackendHostPort, opt...)
 	if err != nil {
 		logrus.Fatalf("failed dialing backend: %v", err)
